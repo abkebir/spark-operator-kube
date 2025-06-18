@@ -1,0 +1,53 @@
+apiVersion: "sparkoperator.k8s.io/v1beta2"
+kind: SparkApplication
+metadata:
+  name: spark-minio
+  namespace: data
+spec:
+  type: Python
+  pythonVersion: "3"
+  mode: cluster
+  image: "sparkminiojob-demo:3.3.1"
+  imagePullPolicy: IfNotPresent
+  mainApplicationFile: local:///app/main.py
+  sparkVersion: "3.3.1"
+  restartPolicy:
+    type: OnFailure
+    onFailureRetries: 3
+    onFailureRetryInterval: 10
+    onSubmissionFailureRetries: 5
+    onSubmissionFailureRetryInterval: 20
+  hadoopConf:
+    "fs.s3a.access.key": "minioadmin"
+    "fs.s3a.secret.key": "minioadmin"
+    "fs.s3a.endpoint": "http://minio-service.data.svc.cluster.local:9000"
+    "fs.s3a.path.style.access": "true"
+    "fs.s3a.connection.ssl.enabled": "false"
+  driver:
+    cores: 1
+    memory: "512m"
+    labels:
+      version: 3.3.1
+    serviceAccount: spark
+    envFrom:
+      - secretRef:
+          name: minio-secret
+    env:
+      - name: INPUT_PATH
+        value: "s3a://landing-zone/2018_Yellow_Taxi_Trip_Data.csv"
+      - name: OUTPUT_PATH
+        value: "s3a://bronze/taxi-data-output"
+  executor:
+    cores: 1
+    instances: 1
+    memory: "512m"
+    labels:
+      version: 3.3.1
+    envFrom:
+      - secretRef:
+          name: minio-secret
+    env:
+      - name: INPUT_PATH
+        value: "s3a://landing-zone/2018_Yellow_Taxi_Trip_Data.csv"
+      - name: OUTPUT_PATH
+        value: "s3a://bronze/taxi-data-output"
