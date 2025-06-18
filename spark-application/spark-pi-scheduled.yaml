@@ -1,0 +1,35 @@
+apiVersion: "sparkoperator.k8s.io/v1beta2"
+kind: ScheduledSparkApplication
+metadata:
+  name: pyspark-pi-scheduled
+  namespace: data
+spec:
+    schedule: "*/10 * * * *" # Every 10mn
+    concurrencyPolicy: Allow  # Allow concurrent runs
+    template:
+      type: Python
+      pythonVersion: "3"
+      mode: cluster
+      image: "openlake/spark-py:3.3.1"
+      imagePullPolicy: Always
+      mainApplicationFile: local:///opt/spark/examples/src/main/python/pi.py
+      sparkVersion: "3.3.1"
+      restartPolicy:
+        type: OnFailure
+        onFailureRetries: 3
+        onFailureRetryInterval: 10
+        onSubmissionFailureRetries: 5
+        onSubmissionFailureRetryInterval: 20
+      driver:
+        cores: 1
+        coreLimit: "1200m"
+        memory: "512m"
+        labels:
+          version: 3.3.1
+        serviceAccount: spark
+      executor:
+        cores: 1
+        instances: 1
+        memory: "512m"
+        labels:
+          version: 3.3.1
